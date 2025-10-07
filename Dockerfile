@@ -20,14 +20,17 @@ WORKDIR /app
 # Copier les fichiers de dépendances
 COPY package*.json ./
 
-# Installer les dépendances
-RUN npm ci --only=production
+# Installer toutes les dépendances (dev + prod pour le build)
+RUN npm ci
 
 # Copier le reste du code source
 COPY . .
 
 # Construire l'application
 RUN npm run build
+
+# Nettoyer les devDependencies après le build pour réduire la taille
+RUN npm prune --production
 
 # Exposer le port
 EXPOSE 3323
