@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connexion WhatsApp</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+          Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f0f2f5;
+        color: #1c1e21;
+      }
+      .container {
+        text-align: center;
+        padding: 40px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+      #qrcode {
+        min-width: 264px;
+        min-height: 264px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 8px;
+      }
+      #status {
+        margin-top: 20px;
+        font-size: 16px;
+        font-weight: 500;
+      }
+      .loader {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 2s linear infinite;
+        margin: auto;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Initialisation de la session WhatsApp</h1>
+      <p>Scannez ce code QR avec l'application WhatsApp sur votre téléphone.</p>
+      <div id="qrcode"><div class="loader"></div></div>
+      <p id="status">Statut: En attente du code QR...</p>
+    </div>
+
+    <script>
+      const qrElement = document.getElementById('qrcode');
+      const statusElement = document.getElementById('status');
+
+      const intervalId = setInterval(async () => {
+        try {
+          const response = await fetch('/whatsapp/status');
+          if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+          }
+          const data = await response.json();
+
+          statusElement.textContent = `Statut: ${data.status}`;
+
+          if (data.qr) {
+            qrElement.innerHTML = ''; // Nettoyer le loader ou l'ancien QR
+            const qr = qrcode(0, 'L');
+            qr.addData(data.qr);
+            qr.make();
+            qrElement.innerHTML = qr.createImgTag(8); // Agrandir le QR code
+          }
+
+          if (data.status === 'CONNECTED') {
+            qrElement.innerHTML = '<h2>✅ Connecté avec succès !</h2>';
+            statusElement.textContent = 'Statut: CONNECTED';
+            clearInterval(intervalId);
+          }
+        } catch (error) {
+          console.error('Erreur lors de la récupération du statut:', error);
+          statusElement.textContent = 'Statut: Erreur de connexion au backend.';
+          qrElement.innerHTML =
+            '<p style="color: red;">Impossible de charger le code QR. Vérifiez la console.</p>';
+        }
+      }, 3000);
+    </script>
+  </body>
+</html>
