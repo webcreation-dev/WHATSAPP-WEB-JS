@@ -10,6 +10,9 @@ services:
       - ./uploads:/app/uploads
       - ./.wwebjs_auth:/app/.wwebjs_auth
       - ./.wwebjs_cache:/app/.wwebjs_cache
-      - ./sessions:/app/sessions
+      - wwebjs_sessions:/app/sessions
 
     restart: unless-stopped
+
+volumes:
+  wwebjs_sessions:
