@@ -3,7 +3,7 @@ import { Client, LocalAuth, MessageMedia, Message, Buttons } from 'whatsapp-web.
 import * as qrcode from 'qrcode-terminal';
 import * as fs from 'fs';
 import * as path from 'path';
-import { SendButtonDto, SendMediaDto, SendMessageDto, SendOTPDto, WhatsAppStatus } from './whatsapp.interface';
+import { SendButtonDto, SendMediaDto, SendMediaUrlDto, SendMessageDto, SendOTPDto, WhatsAppStatus } from './whatsapp.interface';
 
 @Injectable()
 export class WhatsAppService implements OnModuleInit {
@@ -213,6 +213,44 @@ export class WhatsAppService implements OnModuleInit {
         } catch (error) {
             this.logger.error('Failed to send media', error);
             throw new Error(`Failed to send media: ${error.message}`);
+        }
+    }
+
+    async sendMediaFromUrl(dto: SendMediaUrlDto): Promise<any> {
+        try {
+            if (this.status !== WhatsAppStatus.CONNECTED) {
+                throw new Error(`WhatsApp client not ready. Status: ${this.status}`);
+            }
+
+            const formattedNumber = this.formatPhoneNumber(dto.to);
+            this.logger.log(`Sending media from URL to ${formattedNumber}: ${dto.url}`);
+
+            const options: any = {};
+            if (dto.filename) {
+                options.unsafeMime = true;
+            }
+
+            const media = await MessageMedia.fromUrl(dto.url, options);
+            
+            if (dto.filename) {
+                media.filename = dto.filename;
+            }
+
+            const result = await this.client.sendMessage(formattedNumber, media, {
+                caption: dto.caption || '',
+            });
+
+            return {
+                success: true,
+                messageId: result.id._serialized,
+                timestamp: result.timestamp,
+                to: dto.to,
+                mediaType: media.mimetype,
+                filename: dto.filename || media.filename,
+            };
+        } catch (error) {
+            this.logger.error('Failed to send media from URL', error);
+            throw new Error(`Failed to send media from URL: ${error.message}`);
         }
     }
 

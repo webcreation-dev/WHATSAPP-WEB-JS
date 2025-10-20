@@ -23,6 +23,13 @@ export interface SendMediaDto {
     caption?: string;
 }
 
+export interface SendMediaUrlDto {
+    to: string;
+    url: string;
+    caption?: string;
+    filename?: string;
+}
+
 export interface SendButtonDto {
     to: string;
     message: string;

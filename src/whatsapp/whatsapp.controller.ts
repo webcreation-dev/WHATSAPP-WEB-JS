@@ -3,7 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { WhatsAppService } from './whatsapp.service';
-import type { SendButtonDto, SendMessageDto, SendOTPDto } from './whatsapp.interface';
+import type { SendButtonDto, SendMediaUrlDto, SendMessageDto, SendOTPDto } from './whatsapp.interface';
 
 @Controller('whatsapp')
 export class WhatsAppController {
@@ -62,6 +62,22 @@ export class WhatsAppController {
         filePath: file.path,
         caption,
       });
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Post('send-media-url')
+  async sendMediaFromUrl(@Body() dto: SendMediaUrlDto) {
+    try {
+      if (!dto.url) {
+        throw new Error('URL is required');
+      }
+      if (!dto.to) {
+        throw new Error('Recipient phone number is required');
+      }
+
+      return await this.whatsAppService.sendMediaFromUrl(dto);
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
