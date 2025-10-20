@@ -1,5 +1,5 @@
 /*
-GET http://213.136.81.100:3323/whatsapp/status
+GET http://62.72.36.30:3323/whatsapp/status
 
 Response:
 {
@@ -10,7 +10,7 @@ Response:
 
 // 2. Envoyer un message simple
 /*
-POST http://213.136.81.100:3323/whatsapp/send-message
+POST http://62.72.36.30:3323/whatsapp/send-message
 Content-Type: application/json
 
 {
