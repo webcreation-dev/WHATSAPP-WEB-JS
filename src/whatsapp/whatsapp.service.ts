@@ -12,6 +12,7 @@ import { of, throwError } from 'rxjs';
 export class WhatsAppService implements OnModuleInit {
     private readonly logger = new Logger(WhatsAppService.name);
     private client: Client;
+    private readonly backendBaseUrl = 'https://api.locapay.app';
     
     constructor(private readonly httpService: HttpService) {}
     private status: WhatsAppStatus = WhatsAppStatus.DISCONNECTED;
@@ -413,13 +414,18 @@ export class WhatsAppService implements OnModuleInit {
             const result = await this.client.sendMessage(formattedNumber, poll);
 
             // 2. Stocker dans le BACKEND avec retry logic
-            const pollResponse = await this.makeHttpCallWithRetry('POST', '/api/polls', {
+            const pollDataToSend = {
                 messageId: result.id._serialized,
                 pollName: dto.pollName,
-                pollOptions: dto.pollOptions,
+                pollOptions: dto.pollOptions, // Array d'objets avec name et localId
                 webhookUrl: dto.webhookUrl,
-                responseMessages: dto.responseMessages
-            }).toPromise();
+                responseMessages: dto.responseMessages,
+                propertyAlertId: dto.propertyAlertId,
+            };
+            
+            this.logger.log(`Sending to backend: ${JSON.stringify(pollDataToSend, null, 2)}`);
+            
+            const pollResponse = await this.makeHttpCallWithRetry('POST', `${this.backendBaseUrl}/polls`, pollDataToSend).toPromise();
 
             // Si le backend a échoué, on log mais on ne crash pas
             if (!pollResponse) {
@@ -456,7 +462,7 @@ export class WhatsAppService implements OnModuleInit {
             const messageId = vote.parentMessage.id._serialized;
 
             // 1. Récupérer les données du sondage avec retry
-            const pollResponse = await this.makeHttpCallWithRetry('GET', `/api/polls/${messageId}`).toPromise();
+            const pollResponse = await this.makeHttpCallWithRetry('GET', `${this.backendBaseUrl}/polls/${messageId}`).toPromise();
 
             // Fallback : si le backend est down, on log le vote localement et on continue
             if (!pollResponse || !pollResponse.data) {
@@ -465,11 +471,12 @@ export class WhatsAppService implements OnModuleInit {
                 return; // On sort proprement sans crasher
             }
 
-            const pollData = pollResponse.data;
+            const pollData = pollResponse.data.data;
 
             // 2. Vérifier si déjà traité avec retry
-            const alreadyProcessedResponse = await this.makeHttpCallWithRetry('GET', `/api/poll-votes/${messageId}/${vote.voter}`).toPromise();
-            if (alreadyProcessedResponse?.data?.alreadyProcessed) {
+            const alreadyProcessedResponse = await this.makeHttpCallWithRetry('GET', `${this.backendBaseUrl}/polls/votes/${messageId}/${vote.voter}`).toPromise();
+            console.log('ALREADY PROCESSED RESPONSE', alreadyProcessedResponse)
+            if (alreadyProcessedResponse?.data?.data?.alreadyProcessed) {
                 this.logger.log(`Vote already processed for ${vote.voter}`);
                 return;
             }
@@ -486,7 +493,7 @@ export class WhatsAppService implements OnModuleInit {
             this.logger.log(`Selected option ID: ${selectedOptionId}`);
 
             // 3. Enregistrer le vote avec retry
-            const voteRecorded = await this.makeHttpCallWithRetry('POST', '/api/poll-votes', {
+            const voteRecorded = await this.makeHttpCallWithRetry('POST', `${this.backendBaseUrl}/polls/votes`, {
                 messageId,
                 voter: vote.voter,
                 selectedOption: selectedOption.name,
@@ -512,19 +519,23 @@ export class WhatsAppService implements OnModuleInit {
             }
 
             // 5. Appeler webhook du client avec retry
-            if (pollData.webhookUrl) {
-                const webhookResponse = await this.makeHttpCallWithRetry('POST', pollData.webhookUrl, {
-                    pollId: pollData.pollId,
-                    voter: vote.voter,
-                    selectedOption: selectedOption.name,
-                    selectedOptionId: selectedOptionId,
-                    timestamp: vote.interractedAtTs
-                }).toPromise();
+            // if (pollData.webhookUrl) {
+            //     const webhookData = {
+            //         pollId: pollData.pollId,
+            //         voter: vote.voter,
+            //         selectedOption: selectedOption.name,
+            //         selectedOptionId: selectedOptionId,
+            //         timestamp: vote.interractedAtTs
+            //     };
+                
+            //     this.logger.log(`Sending webhook to ${pollData.webhookUrl}: ${JSON.stringify(webhookData, null, 2)}`);
+                
+            //     const webhookResponse = await this.makeHttpCallWithRetry('POST', pollData.webhookUrl, webhookData).toPromise();
 
-                if (!webhookResponse) {
-                    this.logger.error(`Failed to call webhook ${pollData.webhookUrl}`);
-                }
-            }
+            //     if (!webhookResponse) {
+            //         this.logger.error(`Failed to call webhook ${pollData.webhookUrl}`);
+            //     }
+            // }
         } catch (error) {
             this.logger.error('Error handling poll vote response', error);
             // On ne throw pas l'erreur pour éviter de crasher le service

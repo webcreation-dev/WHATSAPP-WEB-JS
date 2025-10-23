@@ -6,7 +6,7 @@ import { WhatsAppController } from './whatsapp.controller';
 @Module({
   imports: [
     HttpModule.register({
-      baseURL: process.env.BACKEND_URL || 'http://localhost:4000',
+      baseURL: process.env.BACKEND_URL || 'https://api.locapay.app',
       timeout: 10000,
       maxRedirects: 3,
     })

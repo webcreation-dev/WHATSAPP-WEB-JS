@@ -59,6 +59,7 @@ export interface SendPollDto {
     responseMessages: {          
         [key: string]: string;   
     };
+    propertyAlertId: string;
 }
 
 export interface PollVoteResponse {
