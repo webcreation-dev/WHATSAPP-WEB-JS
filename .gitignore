@@ -12,6 +12,8 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+/sessions
+/.wwebjs_cache
 # OS
 .DS_Store
 

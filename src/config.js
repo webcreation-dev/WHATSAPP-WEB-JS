@@ -1,5 +1,5 @@
 /*
-GET http://213.136.81.100:3323/whatsapp/status
+GET http://localhost:3323/whatsapp/status
 
 Response:
 {

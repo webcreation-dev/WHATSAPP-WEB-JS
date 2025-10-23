@@ -47,3 +47,25 @@ export interface ButtonAction {
     type: 'reply' | 'url' | 'call' | 'webhook';
     value: string;
 }
+
+export interface SendPollDto {
+    to: string;
+    pollName: string;
+    pollOptions: Array<{
+        name: string;
+        localId: number;
+    }>;
+    webhookUrl: string;         
+    responseMessages: {          
+        [key: string]: string;   
+    };
+}
+
+export interface PollVoteResponse {
+    voter: string;
+    pollName: string;
+    selectedOption: string;
+    selectedOptionId: number;
+    timestamp: number;
+    messageId: string;
+}

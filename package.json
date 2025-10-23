@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/mapped-types": "*",
@@ -27,6 +28,7 @@
     "@nestjs/platform-socket.io": "^11.1.6",
     "@nestjs/websockets": "^11.1.6",
     "@types/qrcode": "^1.5.5",
+    "axios": "^1.12.2",
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "reflect-metadata": "^0.2.2",

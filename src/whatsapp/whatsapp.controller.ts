@@ -3,7 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { WhatsAppService } from './whatsapp.service';
-import type { SendButtonDto, SendMediaUrlDto, SendMessageDto, SendOTPDto } from './whatsapp.interface';
+import type { SendButtonDto, SendMediaUrlDto, SendMessageDto, SendOTPDto, SendPollDto } from './whatsapp.interface';
 
 @Controller('whatsapp')
 export class WhatsAppController {
@@ -88,6 +88,25 @@ export class WhatsAppController {
     try {
       const exists = await this.whatsAppService.checkNumberExists(phone);
       return { phone, exists };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Post('send-poll')
+  async sendPoll(@Body() dto: SendPollDto) {
+    try {
+      if (!dto.to) {
+        throw new Error('Recipient phone number is required');
+      }
+      if (!dto.pollName) {
+        throw new Error('Poll name is required');
+      }
+      if (!dto.pollOptions || dto.pollOptions.length === 0) {
+        throw new Error('Poll options are required');
+      }
+
+      return await this.whatsAppService.sendPoll(dto);
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
