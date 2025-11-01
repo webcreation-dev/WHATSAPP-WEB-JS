@@ -62,6 +62,11 @@ export interface SendPollDto {
     propertyAlertId: string;
 }
 
+export interface SendGroupMessageDto {
+    groupId: string;  // ID du groupe (format: 123456789-987654321@g.us)
+    message: string;
+  }
+
 export interface PollVoteResponse {
     voter: string;
     pollName: string;

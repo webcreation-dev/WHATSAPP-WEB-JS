@@ -4,7 +4,7 @@ import { Client, LocalAuth, MessageMedia, Message, Buttons, Poll, PollVote } fro
 import * as qrcode from 'qrcode-terminal';
 import * as fs from 'fs';
 import * as path from 'path';
-import { SendButtonDto, SendMediaDto, SendMediaUrlDto, SendMessageDto, SendOTPDto, SendPollDto, PollVoteResponse, WhatsAppStatus } from './whatsapp.interface';
+import { SendButtonDto, SendMediaDto, SendMediaUrlDto, SendMessageDto, SendOTPDto, SendPollDto, PollVoteResponse, WhatsAppStatus, SendGroupMessageDto } from './whatsapp.interface';
 import { catchError, retry, timeout } from 'rxjs/operators';
 import { of, throwError } from 'rxjs';
 
@@ -541,6 +541,67 @@ export class WhatsAppService implements OnModuleInit {
             // On ne throw pas l'erreur pour éviter de crasher le service
         }
     }
+
+    async sendGroupMessage(dto: SendGroupMessageDto): Promise<any> {
+        try {
+          if (this.status !== WhatsAppStatus.CONNECTED) {
+            throw new Error(`WhatsApp client not ready. Status: ${this.status}`);
+          }
+      
+          // Le groupId doit être au format: 123456789-987654321@g.us
+          const groupId = dto.groupId.includes('@g.us') 
+            ? dto.groupId 
+            : `${dto.groupId}@g.us`;
+      
+          this.logger.log(`Sending message to group ${groupId}`);
+      
+          const result = await this.client.sendMessage(groupId, dto.message);
+      
+          return {
+            success: true,
+            messageId: result.id._serialized,
+            timestamp: result.timestamp,
+            groupId: dto.groupId,
+          };
+        } catch (error) {
+          this.logger.error('Failed to send group message', error);
+          throw new Error(`Failed to send group message: ${error.message}`);
+        }
+      }
+
+      async getGroups(): Promise<any> {
+        try {
+          if (this.status !== WhatsAppStatus.CONNECTED) {
+            throw new Error(`WhatsApp client not ready. Status: ${this.status}`);
+          }
+      
+          this.logger.log('Fetching all groups...');
+      
+          // Récupérer tous les chats
+          const chats = await this.client.getChats();
+          
+          // Filtrer uniquement les groupes
+          const groups = chats.filter(chat => chat.isGroup);
+      
+          // Formater les données pour le retour
+          const groupsList = groups.map(group => ({
+            id: group.id._serialized,
+            name: group.name,
+            participantsCount: (group as any).participants?.length || 0,
+            isReadOnly: group.isReadOnly,
+            timestamp: group.timestamp,
+          }));
+      
+          return {
+            success: true,
+            count: groupsList.length,
+            groups: groupsList,
+          };
+        } catch (error) {
+          this.logger.error('Failed to fetch groups', error);
+          throw new Error(`Failed to fetch groups: ${error.message}`);
+        }
+      }
 
     async disconnect() {
         if (this.initializationTimeout) {

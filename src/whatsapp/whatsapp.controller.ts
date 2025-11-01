@@ -3,7 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { WhatsAppService } from './whatsapp.service';
-import type { SendButtonDto, SendMediaUrlDto, SendMessageDto, SendOTPDto, SendPollDto } from './whatsapp.interface';
+import type { SendButtonDto, SendGroupMessageDto, SendMediaUrlDto, SendMessageDto, SendOTPDto, SendPollDto } from './whatsapp.interface';
 
 @Controller('whatsapp')
 export class WhatsAppController {
@@ -107,6 +107,24 @@ export class WhatsAppController {
       }
 
       return await this.whatsAppService.sendPoll(dto);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Get('groups')
+async getGroups() {
+  try {
+    return await this.whatsAppService.getGroups();
+  } catch (error) {
+    throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+  }
+}
+
+  @Post('send-group-message')
+  async sendGroupMessage(@Body() dto: SendGroupMessageDto) {
+    try {
+      return await this.whatsAppService.sendGroupMessage(dto);
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
